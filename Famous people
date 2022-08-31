@@ -1,0 +1,63 @@
+/* Create table with some small set of “famous people”, then make more tables about things they do and join those to create nice human readable lists*/
+
+ CREATE TABLE famous_people (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fullname TEXT,
+    profession TEXT,
+    age INTEGER);
+    
+INSERT INTO famous_people (fullname, profession, age)  VALUES ("Brad Pitt", "actor", 58);
+INSERT INTO famous_people (fullname, profession, age)  VALUES ("Tom Cruise", "actor", 60);
+INSERT INTO famous_people (fullname, profession, age)  VALUES ("J.K. Rowling", "writer", 57);
+INSERT INTO famous_people (fullname, profession, age)  VALUES ("Ariana Grande", "singer", 29);
+INSERT INTO famous_people (fullname, profession, age)  VALUES ("Adele", "singer", 34);
+INSERT INTO famous_people (fullname, profession, age)  VALUES ("Coleen Hoover", "writer", 42);
+
+ CREATE TABLE movies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fullname TEXT,
+    actor_id INTEGER,
+    year INTEGER);
+    
+INSERT INTO movies (fullname, actor_id, year)  VALUES ("Top Gun", 2, 2022);
+INSERT INTO movies (fullname, actor_id, year)  VALUES ("World War Z", 1, 2010);
+INSERT INTO movies (fullname, actor_id, year)  VALUES ("Mission Impossible", 2, 2019);
+
+ CREATE TABLE songs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fullname TEXT,
+    singer_id INTEGER,
+    year INTEGER);
+    
+INSERT INTO songs (fullname, singer_id, year)  VALUES ("7 rings", 4, 2019);
+INSERT INTO songs (fullname, singer_id, year)  VALUES ("Breathin'", 4, 2018);
+INSERT INTO songs (fullname, singer_id, year)  VALUES ("Chasing Pavements", 5, 2008);
+
+ CREATE TABLE books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fullname TEXT,
+    writer_id INTEGER,
+    year INTEGER);
+    
+INSERT INTO books (fullname, writer_id, year)  VALUES ("Reminders of him", 6, 2022);
+INSERT INTO books (fullname, writer_id, year)  VALUES ("Verity", 6, 2018);
+INSERT INTO books (fullname, writer_id, year)  VALUES ("Harry Potter and the Sorcerer's Stone", 3, 1997);
+
+
+--Display singers and their songs
+    SELECT famous_people.fullname, songs.fullname 
+    FROM famous_people 
+    JOIN songs
+    ON famous_people.id=songs.singer_id;
+    
+--Display actors and their movies
+     SELECT famous_people.fullname, movies.fullname 
+    FROM famous_people 
+    JOIN movies
+    ON famous_people.id=movies.actor_id;   
+
+--Display authors and their books
+    SELECT famous_people.fullname, books.fullname 
+    FROM famous_people 
+    JOIN books
+    ON famous_people.id=books.writer_id;
