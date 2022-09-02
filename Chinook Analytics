@@ -1,0 +1,126 @@
+# I'll work with a dataset called chinook, which represents a digital media store and includes tables for artists, albums, media tracks, invoices, and customers.
+# The chinook database has 11 tables in it.
+
+# employees table stores employees data such as employee id, last name, first name, etc. 
+# It also has a field named ReportsTo to specify who reports to whom.
+
+# customers table stores customers data. 
+# The line between employees.Employeeid and customers.SupportRepID shows how the two tables are related. 
+
+# The invoices table stores invoice header data (Customer ID, Billing Address, etc). 
+
+# The invoice_items table stores the invoice line items data (Unit Price, Quantity).
+
+# artists table stores artists data.
+ 
+# albums table stores data about a list of tracks. Each album belongs to one artist. However, one artist may have multiple albums.
+
+# media_types table stores media types such as MPEG audio and AAC audio files.
+
+# genres table stores music types such as rock, jazz, metal, etc.
+ 
+# tracks table stores the data of songs. Each track belongs to one album.
+
+# playlists table store data about playlists. Each playlist contains a list of tracks. 
+# Each track may belong to multiple playlists. The relationship between the playlists table and tracks table is many-to-many. 
+# The playlist_track table is used to reflect this relationship.
+
+#1. Show Customers (their full names, customer ID, and country) who are not in the US.
+SELECT CustomerId, FirstName, LastName, Country 
+FROM customers
+WHERE Country <> 'USA';
+
+#2. Show only the Customers from Brazil.
+SELECT * 
+FROM customers
+WHERE Country = 'Brazil';
+
+#3. Find the Invoices of customers who are from Brazil. The resulting table should show the customer's full name, Invoice ID, Date of the invoice, and billing country.
+SELECT cust.FirstName, cust.LastName, inv.InvoiceId, inv.InvoiceDate, inv.BillingCountry 
+FROM customers cust
+LEFT JOIN invoices inv
+ON cust.CustomerId=inv.CustomerId
+WHERE cust.Country = 'Brazil';
+
+#4. Show the Employees who are Sales Agents.
+SELECT * 
+FROM employees
+WHERE Title LIKE '%Sales%Agent%';
+
+#5. Find a unique/distinct list of billing countries from the Invoice table.
+SELECT DISTINCT BillingCountry
+FROM invoices;
+
+#6. Provide a query that shows the invoices associated with each sales agent. The resulting table should include the Sales Agent's full name.
+SELECT emp.FirstName, emp.LastName, inv.InvoiceID
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeID=cust.SupportRepID
+JOIN invoices inv
+ON cust.CustomerID=inv.CustomerID;
+
+#7. Show the Invoice Total, Customer name, Country, and Sales Agent name for all invoices and customers.
+SELECT cust.FirstName, cust.LastName, inv.Total, cust.Country, emp.FirstName as Employee_FirstName, emp.LastName as Employee_LastName
+From customers cust
+JOIN invoices inv
+ON cust.CustomerID=inv.CustomerID
+JOIN employees emp
+ON emp.EmployeeID=cust.SupportRepID;
+
+#8. How many Invoices were there in 2009?
+SELECT COUNT(*) 
+FROM invoices
+WHERE InvoiceDate LIKE '2009%';
+
+#9. What are the total sales for 2009?
+SELECT SUM(Total)
+FROM invoices
+WHERE InvoiceDate LIKE '2009%';
+
+#10. Write a query that includes the purchased track name with each invoice line item.
+SELECT trac.name, inv.InvoiceLineId
+FROM tracks trac
+JOIN invoice_items inv
+ON trac.TrackId=inv.TrackId;
+
+#11. Write a query that includes the purchased track name AND artist name with each invoice line item.
+SELECT trac.name, art.name, inv.InvoiceLineId
+FROM tracks trac
+JOIN invoice_items inv
+ON trac.TrackId=inv.TrackId
+JOIN albums alb
+ON trac.AlbumID=alb.AlbumID
+JOIN artists art
+ON alb.ArtistID=art.ArtistID;
+
+#12. Provide a query that shows all the Tracks, and include the Album name, Media type, and Genre.
+SELECT trac.Name AS 'Track Name', alb.Title AS 'Album Title', med.Name AS 'Media Type', gen.Name AS 'Genre'
+FROM tracks trac
+JOIN albums alb
+ON trac.AlbumID=alb.AlbumID
+JOIN media_types med
+ON trac.MediaTypeId=med.MediaTypeId
+JOIN genres gen
+ON trac.GenreId=gen.GenreId;
+
+#13. Show the total sales made by each sales agent.
+SELECT emp.FirstName, emp.LastName, SUM(inv.Total)
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeID=cust.SupportRepID
+JOIN invoices inv
+ON cust.CustomerID=inv.CustomerID
+WHERE emp.Title LIKE '%Sales%Agent'
+GROUP BY emp.EmployeeID;
+
+#14. Which sales agent made the most in sales in 2009?
+SELECT emp.FirstName, emp.LastName, SUM(inv.Total) AS Total_Sales
+FROM employees emp
+JOIN customers cust
+ON emp.EmployeeID=cust.SupportRepID
+JOIN invoices inv
+ON cust.CustomerID=inv.CustomerID
+WHERE emp.Title LIKE '%Sales%Agent'
+GROUP BY emp.EmployeeID
+ORDER BY Total_Sales DESC
+LIMIT 1;
