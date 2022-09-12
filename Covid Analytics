@@ -1,0 +1,57 @@
+/*Analyzing World Covid data (from Feb. 4 2020 to Sept. 11 2022) from https://ourworldindata.org/covid-death
+using Microsoft SQL Server Management Studio */
+
+SELECT * 
+FROM PortfolioProject..CovidDeaths
+order by 3,4
+
+SELECT * 
+FROM PortfolioProject..CovidVaccinations
+order by 3,4
+
+--Select Data that we are going to be looking at
+
+SELECT location, date, total_cases, new_cases, total_deaths, population
+FROM PortfolioProject..CovidDeaths
+order by 1, 2
+
+--Looking at Total Cases vs Total Deaths
+--Shows likelihood of dying if you Contract covid in United States
+
+SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as Death_Percentage
+FROM PortfolioProject..CovidDeaths
+Where location = 'United States' AND continent IS NOT NULL
+order by 1, 2
+
+--Looking at Total Cases vs Population
+--Shoes what percentage of population got covid
+
+SELECT location, date, total_cases, population, (total_cases/population)*100 as Percent_Of_Population_Infected
+FROM PortfolioProject..CovidDeaths
+WHERE continent IS NOT NULL
+order by 1, 2
+
+--Looking at countries with Highest Infection Rate compared to Population
+
+SELECT location, population, MAX(total_cases) as Highest_Infection_Count, MAX((total_cases/population)*100) as Percent_Of_Population_Infected
+FROM PortfolioProject..CovidDeaths
+WHERE continent IS NOT NULL
+GROUP BY location, population
+order by Percent_Of_Population_Infected DESC
+
+--Showing Countries with Highest Death Count
+
+SELECT location, MAX(cast(total_deaths as int)) as Total_Death_Count
+FROM PortfolioProject..CovidDeaths
+WHERE continent IS NOT NULL
+GROUP BY location
+order by Total_Death_Count DESC
+
+--Showing Highest Death Count by Continent
+
+SELECT location, MAX(cast(total_deaths as int)) as Total_Death_Count
+FROM PortfolioProject..CovidDeaths
+WHERE continent IS NULL AND location NOT LIKE '%income%' AND location <>'World' AND location <>'International' 
+AND location <>'European Union'
+GROUP BY location
+order by Total_Death_Count DESC
