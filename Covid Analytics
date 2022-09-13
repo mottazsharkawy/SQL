@@ -3,17 +3,17 @@ using Microsoft SQL Server Management Studio */
 
 SELECT * 
 FROM PortfolioProject..CovidDeaths
-order by 3,4
+order by location, date
 
 SELECT * 
 FROM PortfolioProject..CovidVaccinations
-order by 3,4
+order by location, date
 
 --Select Data that we are going to be looking at
 
 SELECT location, date, total_cases, new_cases, total_deaths, population
 FROM PortfolioProject..CovidDeaths
-order by 1, 2
+order by location, date
 
 --Looking at Total Cases vs Total Deaths
 --Shows likelihood of dying if you Contract covid in United States
@@ -21,7 +21,7 @@ order by 1, 2
 SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as Death_Percentage
 FROM PortfolioProject..CovidDeaths
 Where location = 'United States' AND continent IS NOT NULL
-order by 1, 2
+order by location, date
 
 --Looking at Total Cases vs Population
 --Shoes what percentage of population got covid
@@ -29,7 +29,7 @@ order by 1, 2
 SELECT location, date, total_cases, population, (total_cases/population)*100 as Percent_Of_Population_Infected
 FROM PortfolioProject..CovidDeaths
 WHERE continent IS NOT NULL
-order by 1, 2
+order by location, date
 
 --Looking at countries with Highest Infection Rate compared to Population
 
@@ -55,3 +55,43 @@ WHERE continent IS NULL AND location NOT LIKE '%income%' AND location <>'World' 
 AND location <>'European Union'
 GROUP BY location
 order by Total_Death_Count DESC
+
+--Global Numbers by Date
+
+SELECT date, SUM(new_cases) as Total_Cases, SUM(cast(new_deaths as int)) as Total_Deaths, SUM(cast(new_deaths as int))/SUM(new_cases)*100 as Death_Percentage
+FROM PortfolioProject..CovidDeaths
+Where continent IS NOT NULL
+GROUP BY date
+order by Total_Cases, Total_Deaths
+
+--Overall Global Numbers
+
+SELECT SUM(new_cases) as Total_Cases, SUM(cast(new_deaths as int)) as Total_Deaths, SUM(cast(new_deaths as int))/SUM(new_cases)*100 as Death_Percentage
+FROM PortfolioProject..CovidDeaths
+Where continent IS NOT NULL
+
+-- Looking at Total Vaccinations per country
+
+SELECT location, MAX(people_fully_vaccinated) as Fully_vaccinated
+FROM PortfolioProject..CovidVaccinations
+WHERE continent IS NOT NULL
+GROUP by location
+order by location
+
+
+-- Use CTE
+
+With PopvsVac (Location, Total_Vaccinations) as
+(
+SELECT location, MAX(people_fully_vaccinated) as Fully_vaccinated
+FROM PortfolioProject..CovidVaccinations
+WHERE continent IS NOT NULL
+GROUP by location
+)
+
+-- Percentage of population vaccinated by country
+
+SELECT DISTINCT dea.location, (Total_Vaccinations/dea.population)*100 as Percentage_Vaccinated
+FROM PortfolioProject..CovidDeaths dea
+JOIN PopvsVac vacc
+ON dea.location=vacc.Location
