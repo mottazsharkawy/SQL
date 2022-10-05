@@ -1,0 +1,130 @@
+/* Analyzing European Football data between 2008 and 2016 */
+
+-- Analyzing Barcelona's home games in the 2012/2013 season
+SELECT 
+	m.date,
+	t.team_long_name AS opponent,
+	CASE WHEN m.home_goal > m.away_goal THEN 'Barcelona win!'
+        WHEN m.home_goal < m.away_goal THEN 'Barcelona loss :(' 
+        ELSE 'Tie' END AS outcome 
+FROM matches_spain AS m
+LEFT JOIN teams_spain AS t 
+ON m.awayteam_id = t.team_api_id
+WHERE m.hometeam_id =8634;   -- Filter for Barcelona as the home team
+
+-- Analyzing Barcelona's away games in the 2012/2013 season
+SELECT  
+	m.date,
+	t.team_long_name AS opponent,
+	CASE WHEN m.home_goal < m.away_goal THEN 'Barcelona win!'
+        WHEN m.home_goal > m.away_goal THEN 'Barcelona loss :(' 
+        ELSE 'Tie' END AS outcome
+FROM matches_spain AS m
+LEFT JOIN teams_spain AS t    -- Join teams_spain to matches_spain
+ON m.hometeam_id = t.team_api_id
+WHERE m.awayteam_id = 8634;
+
+-- Analyzing matches between rivals Barcelona and Real Madrid
+SELECT 
+	date,
+	CASE WHEN hometeam_id = 8634 THEN 'FC Barcelona' 
+         ELSE 'Real Madrid CF' END as home,
+	CASE WHEN awayteam_id = 8634 THEN 'FC Barcelona' 
+         ELSE 'Real Madrid CF' END as away,
+	CASE WHEN home_goal > away_goal AND hometeam_id = 8634 THEN 'Barcelona win!'        	-- Identify all possible match outcomes
+        WHEN home_goal > away_goal AND hometeam_id = 8633 THEN 'Real Madrid win!'
+        WHEN home_goal < away_goal AND awayteam_id = 8634 THEN 'Barcelona win!'
+        WHEN home_goal < away_goal AND awayteam_id = 8633 THEN 'Real Madrid win!'
+        ELSE 'Tie!' END AS outcome
+FROM matches_spain
+WHERE (awayteam_id = 8634 OR hometeam_id = 8634)
+      AND (awayteam_id = 8633 OR hometeam_id = 8633);
+      
+--Do the number of soccer matches played in a given European country differ across seasons? 
+SELECT 
+	c.name AS country,
+	Count(CASE WHEN m.season = '2012/2013' THEN m.id END) AS matches_2012_2013,      -- Count matches in each of the 3 seasons
+	Count(CASE WHEN m.season = '2013/2014' THEN m.id END) AS matches_2013_2014,
+	Count(CASE WHEN m.season = '2014/2015' THEN m.id END) AS matches_2014_2015
+FROM country AS c
+LEFT JOIN match AS m
+ON c.id = m.country_id
+-- Group by country name alias
+GROUP BY country;
+
+-- The number of wins, losses, and ties in each country in the 2013/2014 and 2014/2015 seasons.
+SELECT 
+	c.name AS country,
+	ROUND(AVG(CASE WHEN m.season='2013/2014' AND m.home_goal = m.away_goal THEN 1       -- Round the percentage of tied games to 2 decimal points
+			 WHEN m.season='2013/2014' AND m.home_goal != m.away_goal THEN 0
+			 END),2) AS pct_ties_2013_2014,
+	ROUND(AVG(CASE WHEN m.season='2014/2015' AND m.home_goal = m.away_goal THEN 1
+			 WHEN m.season='2014/2015' AND m.home_goal != m.away_goal THEN 0
+			 END),2) AS pct_ties_2014_2015
+FROM country AS c
+LEFT JOIN matches AS m
+ON c.id = m.country_id
+GROUP BY country;
+
+--A list of teams that scored 8 or more goals in a home match.
+SELECT                -- Select the team long and short names
+	team_long_name,
+	team_short_name
+FROM team
+WHERE team_api_id IN              -- Filter for teams with 8 or more home goals
+	  (SELECT hometeam_id 
+       FROM match
+       WHERE home_goal >= 8);
+
+-- Countries with matches that has 10 or more goals.
+SELECT
+    c.name AS country_name,
+    COUNT(sub.id) AS matches
+FROM country AS c
+INNER JOIN (SELECT country_id, id                                -- Inner join the subquery onto country     -- Select the country id and match id columns
+           FROM match
+           WHERE (home_goal + away_goal) >=10) AS sub            -- Filter the subquery by matches with 10+ goals
+ON c.id = sub.country_id
+GROUP BY country_name;
+
+-- Calculate the average number of goals per match in each country's league for the 2013/2014 season.
+SELECT 
+	l.name AS league,
+    ROUND(AVG(m.home_goal + m.away_goal), 2) AS avg_goals,        -- Select and round the league's total goals
+    (SELECT ROUND(AVG(home_goal + away_goal), 2)                  -- Select & round the average total goals for the season
+     FROM match
+      WHERE season = '2013/2014') AS overall_avg
+FROM league AS l
+LEFT JOIN match AS m
+ON l.country_id = m.country_id
+WHERE m.season = '2013/2014'                                      -- Filter for the 2013/2014 season
+GROUP BY l.name;
+
+-- Examining the average goals scored in each stage of a match for the 2012/2013 season.
+SELECT 
+	m.stage,                                                         -- Select the stage and average goals for each stage
+    ROUND(AVG(m.home_goal + m.away_goal),2) AS avg_goals,
+    ROUND((SELECT AVG(home_goal + away_goal) 
+           FROM match 
+           WHERE season = '2012/2013'),2) AS overall               -- Select the average overall goals for the 2012/2013 season
+FROM match AS m
+WHERE season = '2012/2013'
+GROUP BY stage;
+
+-- Matches with scores that are extreme outliers for each country (above 3 times the average score!) 
+-- Using correlated subqueries
+SELECT 
+	-- Select country ID, date, home, and away goals from match
+	main.country_id,
+    main.date,
+    main.home_goal, 
+    main.away_goal
+FROM match AS main
+WHERE 
+	-- Filter the main query by the subquery
+	(home_goal + away_goal) > 
+        (SELECT AVG((sub.home_goal + sub.away_goal) * 3)
+         FROM match AS sub
+         -- Join the main query to the subquery in WHERE
+         WHERE main.country_id = sub.country_id);
+         
